@@ -1,4 +1,4 @@
-# Day 1 - Digital Logic Simulation and Technology Synthesis Walkthrough
+# Day 1: Introduction to Verilog RTL Design & Synthesis
 
 This log documents the practical lab work completed on Day 1, focused on verifying RTL code using Icarus Verilog (iverilog) and translating it into a hardware netlist using Yosys against the SkyWater 130nm process cell library.
 
