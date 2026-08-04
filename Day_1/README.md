@@ -77,4 +77,5 @@ yosys> show
 
 ### Technology-Mapped Structural Layout:
 The final hardware block schematic produced by Yosys shows the physical gate connections:
-![Mapped Gate-Level Netlist](./Netlist.png)
+![Mapped Gate-Level Netlist](./good_mux_netlist.png)
+
