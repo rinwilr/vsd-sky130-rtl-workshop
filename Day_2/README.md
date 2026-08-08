@@ -28,4 +28,4 @@ Synthesized a 2-bit multiplier design (`mul2`). Because multiplying by 2 in bina
 * **Netlist Text Proof:** (Shows the `assign` wire stitching code)
   ![Netlist Code](./mult2_netlist_text.png)
 * **Technology Schematic Layout:** (Shows the physical bit-shift wiring block)
-  ![Multiplier Wiring Schematic](./mult2_schematic.png)
+  ![Multiplier Wiring Schematic](./mul2_schematic.png)
