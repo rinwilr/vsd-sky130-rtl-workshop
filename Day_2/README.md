@@ -1,4 +1,4 @@
-# Day 2 - RTL Synthesis and Coding Styles
+# Day 2 - Timing Libraries, Synthesis Approaches, and Efficient Flip-Flop Coding
 
 This folder contains the practical labs and results for Day 2 of the VSD workshop.
 
