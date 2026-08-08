@@ -14,13 +14,108 @@ Analyzed how Yosys handles sub-modules using the `multiple_modules.v` file.
 
 ---
 
-## 2. D Flip-Flop Coding Styles
-Simulated an Asynchronous D Flip-Flop design (`dff_async_set.v`) to watch its behavioral timing waves.
+## 2. D Flip-Flop Coding Styles and Reset Behaviors
 
-* **Simulation Waveform:**
-  ![Async DFF Waveform](./dff_asyncset_wave.png)
+Sequential storage elements process control signals differently based on whether they trigger immediately or wait for a clock edge. We simulated and synthesized multiple flip-flop variations to analyze their hardware behavior.
 
 ---
+
+### Case A: Asynchronous Reset D Flip-Flop
+This design variant responds instantly to the reset signal. The output drops to zero the exact moment the reset line is pushed, running independently of the active clock edge.
+
+* **Verilog Source Code:**
+```verilog
+module dff_asyncres (input clk, input async_reset, input d, output reg q);
+always @ (posedge clk, posedge async_reset)
+begin
+    if (async_reset)
+        q <= 1'b0;
+    else
+        q <= d;
+end
+endmodule
+```
+
+* **Functional Simulation Waveform:**
+  ![Asynchronous Reset Waveform](./dff_async_reset.png)
+
+* **Synthesized Gate Schematic:**
+  ![Asynchronous Reset Schematic](./dff_async_reset_schematic.png)
+
+---
+
+### Case B: Asynchronous Set D Flip-Flop
+This structure handles active-high override signals by forcing the storage pin high immediately. The state updates to a constant binary high state without waiting for a clock synchronization event.
+
+* **Verilog Source Code:**
+```verilog
+module dff_async_set (input clk, input async_set, input d, output reg q);
+always @ (posedge clk, posedge async_set)
+begin
+    if (async_set)
+        q <= 1'b1;
+    else
+        q <= d;
+end
+endmodule
+```
+
+* **Functional Simulation Waveform:**
+  ![Asynchronous Set Waveform](./dff_async_set.png)
+
+* **Synthesized Gate Schematic:**
+  ![Asynchronous Set Schematic](./dff_async_set_schematic.png)
+
+---
+
+### Case C: Synchronous Reset D Flip-Flop
+Unlike asynchronous blocks, this control scheme samples the clear signal conditionally. The output only resets to zero if the reset signal is active at the precise moment a rising clock edge arrives.
+
+* **Verilog Source Code:**
+```verilog
+module dff_syncres (input clk, input sync_reset, input d, output reg q);
+always @ (posedge clk)
+begin
+    if (sync_reset)
+        q <= 1'b0;
+    else
+        q <= d;
+end
+endmodule
+```
+
+* **Functional Simulation Waveform:**
+  ![Synchronous Reset Waveform](./dff_syn_reset.png)
+
+* **Synthesized Gate Schematic:**
+  ![Synchronous Reset Schematic](./dff_sync_reset_schematic.png)
+
+---
+
+### Case D: Combined Asynchronous Reset & Synchronous Set
+This advanced sequential circuit maps concurrent priorities. It checks for an immediate, clock-independent override reset before checking for standard synchronous set actions tied to the active clock track.
+
+* **Verilog Source Code:**
+```verilog
+module dff_asyncres_syncres (input clk, input async_reset, input sync_set, input d, output reg q);
+always @ (posedge clk, posedge async_reset)
+begin
+    if (async_reset)
+        q <= 1'b0;
+    else if (sync_set)
+        q <= 1'b1;
+    else
+        q <= d;
+end
+endmodule
+```
+
+* **Functional Simulation Waveform:**
+  ![Mixed Control Waveform](./dff_asyncres_syncres.png)
+
+* **Synthesized Gate Schematic:**
+  ![Mixed Control Schematic](./dff_asyncres_syncres_schematic.png)
+
 
 ## 3. Multiplier Optimization (Special Case)
 Synthesized a 2-bit multiplier design (`mul2`). Because multiplying by 2 in binary is just shifting bits left, Yosys optimized away all physical logic gates and used pure wire connections instead.
