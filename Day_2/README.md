@@ -40,6 +40,8 @@ endmodule
 * **Mul2 Schematic Layout:** (Shows the physical bit-shift wiring block)
   ![Multiplier Wiring Schematic](./mul2_schematic.png)
 
+Synthesized an 8-bit multiplier design (mult8). Because this specific design assigns the input directly to itself duplicated, Yosys optimizes the operation entirely into a bitwise wire duplication logic pass ({a, a}). The synthesis engine completely removes the multiplier block and hooks up the copper wire routes directly, leaving zero physical logic cells in the final circuit layout.
+
 * **Mul8 Netlist:**
 
 ```verilog
