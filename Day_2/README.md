@@ -5,7 +5,7 @@ This folder contains the practical labs and results for Day 2 of the VSD worksho
 ---
 
 ## 1. Hierarchical vs Flat Synthesis
-We analyzed how Yosys handles sub-modules using the `multiple_modules.v` file.
+Analyzed how Yosys handles sub-modules using the `multiple_modules.v` file.
 
 * **Hierarchical View:** Sub-module structures are preserved as clean blocks.
   ![Hierarchical Schematic](./hierarchical_schematic.png)
@@ -15,7 +15,7 @@ We analyzed how Yosys handles sub-modules using the `multiple_modules.v` file.
 ---
 
 ## 2. D Flip-Flop Coding Styles
-We simulated an Asynchronous D Flip-Flop design (`dff_async_set.v`) to watch its behavioral timing waves.
+Simulated an Asynchronous D Flip-Flop design (`dff_async_set.v`) to watch its behavioral timing waves.
 
 * **Simulation Waveform:**
   ![Async DFF Waveform](./dff_asyncset_wave.png)
@@ -23,7 +23,7 @@ We simulated an Asynchronous D Flip-Flop design (`dff_async_set.v`) to watch its
 ---
 
 ## 3. Multiplier Optimization (Special Case)
-We synthesized a 2-bit multiplier design (`mul2`). Because multiplying by 2 in binary is just shifting bits left, Yosys optimized away all physical logic gates and used pure wire connections instead.
+Synthesized a 2-bit multiplier design (`mul2`). Because multiplying by 2 in binary is just shifting bits left, Yosys optimized away all physical logic gates and used pure wire connections instead.
 
 * **Netlist Text Proof:** (Shows the `assign` wire stitching code)
   ![Netlist Code](./mult2_netlist_text.png)
