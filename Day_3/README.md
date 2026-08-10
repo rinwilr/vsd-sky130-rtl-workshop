@@ -32,10 +32,16 @@ yosys> opt_clean -purge
 yosys> abc -liberty ../my_lib/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
 yosys> show -format png -prefix opt_check_mapped
 ```
-**Synthesized Schematic Layout:**
+
+**Results & Technical Analysis:**
 ![Gate Level Schematic for opt_check](opt check schematic.png)
+* **Analysis:** Because one input of the internal expression is hardwired to a constant value, Yosys propagates this value through the expression. The logic simplifications drastically reduce the required gate count, resulting in an area-optimized layout mapped to the Sky130 library cells.
+
+---
 
 ### Lab 2: Optimizing Multiple Outputs (`opt_check2.v`)
+This lab checks optimization choices across multiple output ports driven by related logic paths.
+
 **Yosys Execution Commands:**
 ```bash
 yosys> read_verilog opt_check2.v
@@ -43,23 +49,35 @@ yosys> synth -top opt_check2
 yosys> opt_clean -purge
 yosys> abc -liberty ../my_lib/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
 ```
-**Synthesized Schematic Layout:**
+
+**Results & Technical Analysis:**
 ![Gate Level Schematic for opt_check2](opt_check2 schematic.png)
+* **Analysis:** Yosys looks across all distinct output branches. When multiple outputs share an identical boolean sub-expression or depend on common constant inputs, the synthesis tool shares physical standard cell gates to drive both pins, preserving area.
+
+---
 
 ### Lab 3: Advanced Combinational Check (`opt_check3.v`)
-**Synthesized Schematic Layout:**
+**Results & Technical Analysis:**
 ![Gate Level Schematic for opt_check3](opt_check3_schematic.png)
+* **Analysis:** This lab demonstrates how multi-input boolean structures are crushed down. Complex nested logic structures evaluate to simpler algebraic equivalents when fixed constraints are applied to the primary input boundaries.
+
+---
 
 ### Lab 4: Complex Multi-Level Optimization (`opt_check4.v`)
-**Synthesized Schematic Layout:**
+**Results & Technical Analysis:**
 ![Gate Level Schematic for opt_check4](opt_check4_schematic.png)
+* **Analysis:** Yosys tracks paths through multiple layers of combinational logic. Constant propagation sweeps through deep cascading levels, cleaning out dead networks and replacing massive logic groupings with direct ties or single standard gates.
+
+---
 
 ### Lab 5: Sub-Module Hierarchical Optimization (`multiple_module.v`)
 We analyze how Yosys performs flat versus hierarchical tracking for optimization paths across multiple boundary modules.
+
 * **Hierarchical Logic Optimization Check:**
   ![Multiple Module Opt 1](multiple_module_opt.png)
 * **Flattened Module Logic Optimization Check:**
   ![Multiple Module Opt 2](multiple_module_opt2.png)
+* **Analysis:** When optimized hierarchically, Yosys leaves sub-module boundaries intact, preventing optimization passes from crossing module lines. Flattening the design removes these artificial sub-module boundaries, enabling global optimizations that yield a tighter gate-level configuration.
 
 ---
 
@@ -75,67 +93,49 @@ yosys> synth -top dff_const1
 yosys> opt_clean -purge
 yosys> abc -liberty ../my_lib/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
 ```
-**Simulation Verification & Schematic:**
-* ![GTKWave Simulation for dff_const1](dff_const1_waveform.png)
-* ![Gate Level Schematic for dff_const1](dff const1.png)
 
-### Lab 2: Sequential Constant Propagation 2 (`dff_const2.v`)
-**Simulation Verification & Schematic:**
-* ![GTKWave Simulation for dff_const2](dff_const2_waveform.png)
-* ![Gate Level Schematic for dff_const2](dff const2.png)
+**Results & Technical Analysis:**
+* ![GTKWave Simulation for dff_const1](dff_const1_waveform.png)
+* ![Gate Level Schematic for dff_const1](dff_const1.png)
+* **Analysis:** The input `D` is tied to a constant logic high value (`1'b1`) with no reset condition. Because the value of `D` never toggles and there is no asynchronous override condition to change `Q`, Yosys identifies the register as a dead tracking element. The physical D-Flip-Flop is deleted entirely during the `opt_clean -purge` pass, and the output net `Q` is hardwired directly to the power rail (VDD).
 
 ---
 
-### Technical Analysis: Structural Mechanics of Labs 1 to 5
-
-The sequential labs demonstrate how the synthesis compiler evaluates initialization parameters, active-high/low control polarities, and steady-state constant propagation boundaries.
-
-#### 1. Analysis of `dff_const1` (No Reset / Matching State)
-* **Circuit Behavior:** In `dff_const1`, the input `D` is tied to a constant logic high value (`1'b1`). When the system transitions, the flip-flop output `Q` simply tracks this constant value.
-* **Optimization Mechanism:** Because the value of `D` never toggles and there is no asynchronous override condition to change `Q` to a different state, Yosys identifies the register as a dead tracking element.
-* **Synthesis Result:** Yosys optimizes away (deletes) the physical D-Flip-Flop standard cell entirely during the `opt_clean -purge` pass. The output net `Q` is hardwired directly to the power rail (VDD/Logic 1).
-
-#### 2. Analysis of `dff_const2` (With Reset Overrides)
-* **Circuit Behavior:** In `dff_const2`, the input `D` is still tied to an operational constant value (`1'b1`). However, the block includes an active-high asynchronous reset pin that forces the output `Q` to logic low (`1'b0`) when asserted.
-* **Optimization Mechanism:** Yosys cannot evaluate this module as a pure constant. Although `Q` stays at `1` during normal clocked operation, it must preserve the physical capability to drop to `0` when the reset line goes high. Because the reset state (`0`) is the inverse of the operational steady state (`1`), the circuit must retain its memory element.
-* **Synthesis Result:** Yosys cannot optimize away the sequential cell. The final netlist retains a physical hardware D-Flip-Flop instance (`sky130_fd_sc_hd__dfrtp`) to preserve the dual-state logic behavior required by the reset condition.
-
-#### 3. Analysis of `dff_const3` (Reset Matching Constant Input)
-* **Circuit Behavior:** In `dff_const3`, the input `D` is tied to a constant logic high value (`1'b1`). The block features an active-high reset that forces the register output `Q` to logic high (`1'b1`) when activated.
-* **Optimization Mechanism:** Yosys checks all possible logical states of the register. Since the clocked steady-state value (`1'b1`) perfectly matches the reset override value (`1'b1`), the output net `Q` will never transition to `0` under any operational condition.
-* **Synthesis Result:** Because `Q` is unconditionally stuck at `1`, the memory cell is completely redundant. Yosys purges the physical D-Flip-Flop from the gate-level netlist and shorts the output pin directly to the VDD power rail.
-
-#### 4. Analysis of `dff_const4` (Active-Low Set Overrides)
-* **Circuit Behavior:** This module utilizes an active-low asynchronous control structure. The input `D` is tied to a constant logic low (`1'b0`), while an active-low clear/set pin forces the output `Q` to logic high (`1'b1`) when pulled low (`0`).
-* **Optimization Mechanism:** The default clocked state (`0`) differs from the control override state (`1`). Additionally, the control signal relies on active-low logic topology. The tool must map hardware that detects the falling edge of the control wire while sustaining an operational `0`.
-* **Synthesis Result:** Yosys must preserve the register to manage the state boundary transition. It implements a specialized Sky130 technology cell containing an inverted preset port (`sky130_fd_sc_hd__dfrbp`) to respect the active-low logic requirement.
-
-#### 5. Analysis of `dff_const5` (Active-Low Control with Matching States)
-* **Circuit Behavior:** In `dff_const5`, the input `D` is tied to a constant logic high (`1'b1`). It features an active-low asynchronous control input that overrides the output `Q` and forces it to logic high (`1'b1`).
-* **Optimization Mechanism:** The synthesis compiler checks the steady-state logic level (`1'b1`) against the active-low override value (`1'b1`). Even though the activation polarity of the control wire is inverted, the target output destination value remains identical across all modes.
-* **Synthesis Result:** Since the register can never hold or output a logic low (`0`) state under any valid environmental stimulus, the flip-flop is optimized out. Yosys removes the cell structure and hooks the net directly to the primary power rail.
+### Lab 2: Sequential Constant Propagation 2 (`dff_const2.v`)
+**Results & Technical Analysis:**
+* ![GTKWave Simulation for dff_const2](dff_const2_waveform.png)
+* ![Gate Level Schematic for dff_const2](dff_const2.png)
+* **Analysis:** The input `D` is tied to an operational constant value (`1'b1`), but the block includes an active-high asynchronous reset pin forcing the output `Q` to logic low (`1'b0`). Because the reset state (`0`) is the inverse of the operational steady state (`1`), the circuit must retain its memory element. Yosys cannot optimize away the sequential cell and retains a physical hardware D-Flip-Flop instance (`sky130_fd_sc_hd__dfrtp`).
 
 ---
 
 ### Lab 3: Sequential Constant Propagation 3 (`dff_const3.v`)
-**Simulation Verification & Schematic:**
+**Results & Technical Analysis:**
 * ![GTKWave Simulation for dff_const3](dff_const3_waveform.png)
 * ![Gate Level Schematic for dff_const3](dff_const3.png)
+* **Analysis:** In `dff_const3`, input `D` is tied to constant logic high (`1'b1`), and the active-high reset also forces the output `Q` to logic high (`1'b1`). Since the clocked steady-state value perfectly matches the reset override value, the output net `Q` will never transition to `0`. The memory cell is completely redundant, so Yosys purges the physical D-Flip-Flop and shorts the output pin directly to the VDD power rail.
+
+---
 
 ### Lab 4: Sequential Constant Propagation 4 (`dff_const4.v`)
-**Simulation Verification & Schematic:**
+**Results & Technical Analysis:**
 * ![GTKWave Simulation for dff_const4](dff const4_waveform.png)
 * ![Gate Level Schematic for dff_const4](dff_const4.png)
+* **Analysis:** This module uses an active-low asynchronous control structure. The input `D` is tied to a constant logic low (`1'b0`), while an active-low clear/set pin forces the output `Q` to logic high (`1'b1`) when pulled low (`0`). The default clocked state (`0`) differs from the control override state (`1`). Yosys must preserve the register to manage the state boundary transition and maps it to a specialized Sky130 technology cell containing an inverted preset port (`sky130_fd_sc_hd__dfrbp`).
+
+---
 
 ### Lab 5: Sequential Constant Propagation 5 (`dff_const5.v`)
-**Simulation Verification & Schematic:**
+**Results & Technical Analysis:**
 * ![GTKWave Simulation for dff_const5](dff_const5_waveform.png)
 * ![Gate Level Schematic for dff_const5](dff_const5.png)
+* **Analysis:** In `dff_const5`, the input `D` is tied to constant logic high (`1'b1`), and an active-low asynchronous control input overrides the output `Q` to force it to logic high (`1'b1`). Because the steady-state logic level matches the active-low override value, the register can never hold or output a logic low (`0`) state. The flip-flop is optimized out, and the net is hooked directly to the primary power rail.
 
 ---
 
 ### Lab 6: Counter Logic Optimization (`counter_opt.v`)
-Analysis of unused bits or dead-state terminal count loop trimming during synthesis iterations. When a counter's primary logic outputs are only partially utilized by the outer block, Yosys cleans up the unused tracking flip-flops to minimize silicon overhead.
+Analysis of unused bits or dead-state terminal count loop trimming during synthesis iterations.
 
-**Synthesized Schematic Layout:**
+**Results & Technical Analysis:**
 ![Counter Optimization Layout](counter_opt.png)
+* **Analysis:** When a multi-bit counter is designed but only a fraction of its primary bit outputs are actually hooked up to drive external ports or logic, the remaining upper bits are classified as dead logic tracking. During synthesis optimization iterations, Yosys cleans up and deletes these unused tracking flip-flops to minimize silicon overhead.
