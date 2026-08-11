@@ -178,8 +178,8 @@ end
 endmodule
 ```
 **Results & Technical Analysis:**
-![Incomplete If Source Graph](in_comp_if.png)
-![Incomplete If Synthesis Output](incomp_synth.png)
+![Incomplete If Source Graph](incomp_if_waveform.png)
+![Incomplete If Synthesis Output](incomp_if_schematic.png)
 * **Analysis:** The `if` statement lacks an `else` clause. If `i0` is false, `y` must hold its value. As a result, the synthesis engine infers a level-triggered latch (`sky130_fd_sc_hd__dlxtp`) instead of pure combinational gates.
 
 ---
