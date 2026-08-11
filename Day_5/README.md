@@ -203,7 +203,28 @@ endmodule
 
 ---
 
-### Lab 3: Complete Case Statement (`comp_case.v`)
+### Lab 3: Incomplete Case Statement (`incomp_case.v`)
+**RTL Source Code:**
+```verilog
+module incomp_case (input i0, input i1, input i2, input [1:0] sel, output reg y);
+always @(*) begin
+    case(sel)
+        2'b00 : y = i0;
+        2'b01 : y = i1;
+    endcase
+end
+endmodule
+```
+**Results & Technical Analysis:**
+![Complete Case Graph](incomp_case_waveform.png)
+![Complete Case Synthesis Output](incomp_case_schematic.png)
+* **Analysis:** * **Incomplete Specification:** The `case` statement evaluates a 2-bit selection signal (`sel`), which has 4 possible combinations (`2'b00`, `2'b01`, `2'b10`, `2'b11`). The code only specifies outputs for two conditions.
+* **Missing Default Path:** There is no `default` statement to handle the remaining conditions (`2'b10` and `2'b11`).
+* **Latch Inference:** Because the output `y` is not assigned a value for all possible states of `sel`, synthesis tools must preserve its previous value during unmapped states. This forces **unintentional transparent latch inference** instead of a clean combinational multiplexer.
+* **Unused Inputs:** The input port `i2` is declared in the module header but is entirely omitted inside the `always` block.
+
+  
+### Lab 4: Complete Case Statement (`comp_case.v`)
 **RTL Source Code:**
 ```verilog
 module comp_case (input i0, input i1, input i2, input [1:0] sel, output reg y);
