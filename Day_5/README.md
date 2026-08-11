@@ -245,7 +245,7 @@ endmodule
 
 ---
 
-### Lab 7: Incomplete Case Handling (`bad_case.v`)
+### Lab 5: Incomplete Case Handling (`bad_case.v`)
 **RTL Source Code:**
 ```verilog
 module bad_case (
@@ -271,7 +271,7 @@ endmodule
 
 ---
 
-### Lab 8: Partial Assignments in Case (`partial_case_assign.v`)
+### Lab 6: Partial Assignments in Case (`partial_case_assign.v`)
 **RTL Source Code:**
 ```verilog
 module partial_case_assign (
