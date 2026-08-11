@@ -41,7 +41,56 @@ A synthesis-simulation mismatch occurs when the behavioral simulation results of
 | **Target Application** | Combinational networks and intermediate paths | Sequential registers and flip-flops |
 | **Synthesized Outcome** | Combinational logic gates | Sequential storage nodes (Flip-Flops) |
 
+### 3.4 Caveats of Blocking Assignments
+
+Using blocking assignments (`=`) inside structured blocks can cause severe hardware bugs. This guide contrasts sequential pipeline bypassing with combinational simulation-synthesis mismatches.
 ---
+
+### Caveat 1: Sequential Shift-Register Bypass
+
+Using blocking assignments inside clocked `always` blocks creates unwanted combinational paths instead of sequential register stages.
+
+#### Broken Sequential RTL (`blocking_seq.v`)
+```verilog
+always @(posedge clk) begin
+    q1 = d;  // d is instantly copied to q1
+    q  = q1; // q reads the fresh q1 value on the same clock edge
+end
+```
+
+#### Hardware & Simulation Impact
+* **The Bug:** Instead of a 2-stage shift register ($d \rightarrow q1 \rightarrow q$) that shifts data by one clock cycle per stage, the intermediate step is optimized away.
+* **The Result:** Data propagates from input `d` directly to output `q` in a single clock cycle, violating expected timing behaviors and inducing race conditions.
+* **The Fix:** Always use **non-blocking assignments (`<=`)** for clocked sequential logic.
+---
+
+### Caveat 2: Combinational Ordering & Stale-Data Flaws
+
+Using incorrect statement ordering inside combinational `always @(*)` blocks forces simulators to use stale data, triggering a simulation-synthesis mismatch.
+
+#### Broken vs. Correct Combinational RTL
+
+##### Broken Implementation (Stale Value / Latch Mimic)
+```verilog
+always @(*) begin
+    y = q0 & c;  // Uses STALE value of q0 from previous evaluation cycle
+    q0 = a | b;  // Updated too late for 'y' to use it in this pass
+end
+```
+
+##### Correct Implementation (Pure Combinational)
+```verilog
+always @(*) begin
+    q0 = a | b;  // Updated first
+    y = q0 & c;  // Uses FRESH value of q0 immediately
+end
+```
+
+#### Hardware & Simulation Impact
+* **The Bug:** In simulation, `y` updates using the old value of `q0` from the previous evaluation cycle, mimicking an unintended memory latch.
+* **The Mismatch:** Synthesis tools ignore step order and optimize the broken code into a pure combinational circuit (`y = (a | b) & c`). This causes functional mismatches between RTL simulation and gate-level netlists.
+* **The Fix:** Inside combinational blocks, always write assignments in topological order—variables must be written before they are read.
+
 
 ## 4. Labs
 
