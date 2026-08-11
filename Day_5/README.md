@@ -1,32 +1,169 @@
 # Day 5: Optimization in Synthesis
 
-## 1. If-Else Statements in Verilog
-`if-else` statements are used for conditional execution within procedural blocks (`always`, `initial`, `task`, or `function`). They establish priority-encoded logic when synthesized into hardware.
+## 1. Conditional Statements in Verilog
 
-### Syntax
+### 1a. If-Else Statements
+`if-else` statements handle conditional execution inside procedural blocks (`always`, `initial`, `task`, or `function`). They synthesize into **priority-encoded logic** using a cascading multiplexer chain.
+
+#### Syntax
 ```verilog
-if (condition1) begin
-    // Code block executed if condition1 is true
-end else if (condition2) begin
-    // Code block executed if condition2 is true
+// Standard If-Else
+if (condition) begin
+    // Executed if condition is true
 end else begin
-    // Code block executed if no previous conditions match
+    // Executed if condition is false
+end
+
+// Nested If-Else (Priority Tree)
+if (condition1) begin
+    // Executed if condition1 is true (highest priority)
+end else if (condition2) begin
+    // Executed if condition2 is true
+end else begin
+    // Executed if no previous conditions match
 end
 ```
-* **Priority Encoding:** The synthesis compiler processes conditions sequentially from top to bottom. The first condition that evaluates to true determines the execution path, creating a cascading multiplexer structure in hardware.
+
+* **Priority Execution**: Conditions process sequentially from top to bottom.
+* **Mutual Exclusion**: Only the first branch evaluating to true executes.
 
 ---
 
-## 2. Inferred Latches in Verilog
-In behavioral modeling, a hardware **latch (Level-Triggered Storage)** is unintentionally inferred if a variable inside a combinational procedural block (`always @(*)`) is not assigned a value across all possible execution paths.
+### 1b. Case Statements
+`case` statements compare an expression against multiple values. They synthesize into parallel-evaluation structures (a single large multiplexer) rather than a priority tree.
+
+#### Syntax
+```verilog
+case (expression)
+    value1: begin
+        // Executed if expression == value1
+    end
+    value2: begin
+        // Executed if expression == value2
+    end
+    default: begin
+        // Executed if no matches are found
+    end
+endcase
+```
+
+📌 **Data Type Rule**: Any variable assigned a value inside an `if-else` or `case` block within a procedural block must be declared as a `reg` type.
+
+---
+
+## 2. Deep Dive: Case Statement Caveats
+
+### ⚠️ Caveat 1: Incomplete Case Statements
+An incomplete case statement occurs when some input permutations of the selection signal are completely omitted, and no fallback branch exists.
+
+* **The Problem**: For a 2-bit selection signal (`reg [1:0] sel`), 4 states exist (`00`, `01`, `10`, `11`). Mapping only `2'b00` and `2'b01` leaves the remaining states undefined.
+* **The Fix**: Always provide a `default` statement to safely trap unmapped states and keep logic combinational.
+
+```verilog
+// BAD: Omitted states infer a latch
+case(sel)
+    2'b00: out = c1;
+    2'b01: out = c2;
+endcase
+
+// GOOD: Safe fallback
+case(sel)
+    2'b00: out = c1;
+    2'b01: out = c2;
+    default: out = 1'b0; 
+endcase
+```
+
+### ⚠️ Caveat 2: Partial Assignments
+A partial assignment happens when an output variable is specified in one branch of a `case` statement but forgotten in another.
+
+* **The Problem**: If `x` and `y` are outputs, but `y` is left out of the `2'b01` branch, the synthesis tool forces a hardware loop to retain the last value of `y`.
+* **The Fix**: Explicitly map every single output variable in every single branch segment.
+
+```verilog
+// Example of partial assignment causing a latch on output 'y'
+always @(*) begin
+    case(sel)
+        2'b00 : begin
+            x = a;
+            y = b;
+        end
+        2'b01 : begin
+            x = c;
+            // y is missing here!
+        end
+        default : begin
+            x = d;
+            y = b;
+        end
+    endcase
+end
+```
+
+### ⚠️ Caveat 3: Overlapping Case Expressions & Bad Don't Cares
+Using overlapping values or bad wildcard markers (`?`) creates competing conditions that simulate differently than they synthesize.
+
+* **The Problem**: If `sel = 2'b10`, it matches both `2'b10` and `2'b1?` simultaneously.
+* **The Consequence**: Simulation checks branches top-to-bottom, while synthesis builds parallel evaluation. This mismatch yields **unpredictable outputs** in hardware.
+* **The Fix**: Ensure all case expressions are strictly mutually exclusive. Use `if-else-if` structures if priority is required.
+
+```verilog
+// DANGEROUS: Causes unpredictable hardware behavior
+case(sel)
+    2'b00 : out = a;
+    2'b01 : out = b;
+    2'b10 : out = c; // Overlaps with the line below!
+    2'b1? : out = d; 
+endcase
+```
+
+---
+
+## 3. Inferred Latches in Verilog
 
 ### Cause of Latch Inference
-When a path is left unspecified (e.g., an `if` statement missing an `else` branch, or a `case` statement missing a case option/`default`), the synthesis tool is forced to retain the variable's previous state. This generates a feedback loop in hardware, yielding an unwanted latch.
+In combinational modeling (`always @(*)`), a level-triggered hardware latch is unintentionally inferred when a variable is not assigned a value across all possible execution paths. When a path is left unspecified, the synthesis tool must retain the variable's previous state, creating an unwanted memory element.
 
 ### Resolution
-Ensure that every variable written to inside a combinational block is assigned a value under every imaginable execution branch, or specify a default assignment at the very beginning of the procedural block.
+* Assign values to every output variable under every execution branch.
+* Alternatively, specify a safe default assignment at the very top of the procedural block.
 
----
+```verilog
+always @(*) begin
+    // Safe default assignments prevent latches
+    x = 1'b0;
+    y = 1'b0;
+    
+    if (condition) begin
+        x = a;
+    end // Missing 'else' will NOT cause a latch now
+end
+```
+
+### Exception: Incomplete If-Else in Sequential Logic
+Incomplete conditional paths are perfectly acceptable and standard practice within **sequential logic blocks** (`always @(posedge clk)`). Instead of an unwanted latch, the synthesis tool cleanly infers a **D Flip-Flop with a Clock Enable pin**.
+
+#### Example: 3-Bit Counter
+```verilog
+module counter_3bit (
+    input  wire       clk,   // Clock signal
+    input  wire       reset, // Asynchronous reset
+    input  wire       en,    // Count enable
+    output reg  [2:0] count  // 3-bit count output
+);
+
+    // Sequential logic block
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            count <= 3'b000;
+        end else if (en) begin
+            count <= count + 3'b001;
+        end
+        // No explicit 'else' needed. 
+        // Holds value safely on a D-FF when 'en' is low.
+    end
+endmodule
+```
 
 ## 3. Labs for If-Else and Case Statements
 
