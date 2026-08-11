@@ -184,7 +184,7 @@ endmodule
 
 ---
 
-### Lab 3: Nested If-Else (`incomp_if2.v`)
+### Lab 2: Nested If-Else (`incomp_if2.v`)
 **RTL Source Code:**
 ```verilog
 module incomp_if2 (input i0, input i1, input i2, input i3, output reg y);
@@ -197,13 +197,13 @@ end
 endmodule
 ```
 **Results & Technical Analysis:**
-![Nested If Source Graph](icomp2.png)
-![Nested If Synthesis Output](incomp2synth.png)
+![Nested If Source Graph](incomp_if2_waveform.png)
+![Nested If Synthesis Output](incomp_if2_schematic.png)
 * **Analysis:** While this nested structure builds a cascading priority line, it still lacks a final fallback `else` statement. If both `i0` and `i2` evaluate to false, `y` drops into hold-state, generating an inferred latch in the synthesis netlist.
 
 ---
 
-### Lab 5: Complete Case Statement (`comp_case.v`)
+### Lab 3: Complete Case Statement (`comp_case.v`)
 **RTL Source Code:**
 ```verilog
 module comp_case (input i0, input i1, input i2, input [1:0] sel, output reg y);
