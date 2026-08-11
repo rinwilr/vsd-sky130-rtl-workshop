@@ -119,6 +119,7 @@ yosys> abc -liberty ../my_lib/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
 ```
 
 **Results & Technical Analysis:**
+
 ![Yosys Ternary Mux Synthesis Output](ternary_schematic.png)
 * **Analysis:** The synthesis tool analyzes the continuous conditional evaluation operator and maps it to a standard combinational multiplexer cell layout from the SkyWater 130nm library (`sky130_fd_sc_hd__mux2_1`). No memory loops or latches are inferred.
 
