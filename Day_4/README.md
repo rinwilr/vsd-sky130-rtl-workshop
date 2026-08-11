@@ -103,7 +103,7 @@ endmodule
 ```
 
 **Results & Technical Analysis:**
-![Ternary Mux Waveform](lab1.png)
+![Ternary Mux Waveform](ternary_operator_mux_waveform.png)
 * **Analysis:** The ternary assignment maps directly to clean combinational evaluation. Pre-synthesis functional verification shows an ideal, glitch-free 2:1 multiplexing waveform where the output tracker `y` instantly follows either `i1` or `i0` based on the status of the select line.
 
 ---
@@ -116,11 +116,10 @@ yosys> read_liberty -lib ../my_lib/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
 yosys> read_verilog ternary_operator_mux.v
 yosys> synth -top ternary_operator_mux
 yosys> abc -liberty ../my_lib/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
-yosys> show -format png -prefix mux_synth_layout
 ```
 
 **Results & Technical Analysis:**
-![Yosys Ternary Mux Synthesis Output](lab2.png)
+![Yosys Ternary Mux Synthesis Output](ternary_schematic.png)
 * **Analysis:** The synthesis tool analyzes the continuous conditional evaluation operator and maps it to a standard combinational multiplexer cell layout from the SkyWater 130nm library (`sky130_fd_sc_hd__mux2_1`). No memory loops or latches are inferred.
 
 ---
@@ -134,7 +133,7 @@ yosys> show -format png -prefix mux_synth_layout
 ```
 
 **Results & Technical Analysis:**
-![Ternary Mux GLS Waveform](lab3.png)
+![Ternary Mux GLS Waveform](ternary_operator_mux_GLS.png)
 * **Analysis:** By compiling the design netlist with the core Sky130 technology standard cell behavioral definitions (`primitives.v`, `sky130_fd_sc_hd.v`), the output waveform validates that the post-synthesis hardware exactly matches the original functional RTL requirements.
 
 ---
@@ -153,14 +152,14 @@ endmodule
 ```
 
 **Results & Technical Analysis:**
-![Bad Mux Waveform](lab4.png)
+![Bad Mux Waveform](bad_mux_waveform.png)
 * **Analysis:** This design introduces two fatal bugs: an incomplete sensitivity list (`always @(sel)`) and non-blocking statements inside a combinational evaluation block. During RTL simulation, if `sel` is constant but `i0` or `i1` switches values, the simulator skips the code block entirely. This creates a severe behavior gap compared to synthesized hardware.
 
 ---
 
 ### Lab 5: GLS of Bad MUX
 **Results & Technical Analysis:**
-![Bad Mux GLS Mismatch Verification](lab5.png)
+![Bad Mux GLS Mismatch Verification](bad_mux_GLS.png)
 * **Analysis:** Running a post-synthesis GLS on the generated netlist exposes the simulation-synthesis mismatch. The synthesis engine automatically treats the circuit as a combinational path or infers storage latches, causing the netlist simulation waveform to differ dramatically from the buggy RTL simulation execution graph.
 
 ---
@@ -178,12 +177,12 @@ endmodule
 ```
 
 **Results & Technical Analysis:**
-![Blocking Caveat Structural Graph](lab6.png)
+![Blocking Caveat Structural Graph](blocking_caveat_waveform.png)
 * **Analysis:** Because the statements run immediately in sequential code order, the value of `d` is evaluated using the *previous* or stale value of internal variable `x` from the prior simulation step, rather than using the updated `a | b` calculation. This race condition causes the logic to simulate like a shift register or memory node.
 
 ---
 
 ### Lab 7: Synthesis of the Blocking Caveat Module
 **Results & Technical Analysis:**
-![Blocking Caveat Synthesis Report](lab7.png)
+![Blocking Caveat Synthesis Report](bc_gls.png)
 * **Analysis:** To resolve the mismatch, the sequential code order must be flipped so that intermediate variables evaluate before they are referenced (`x = a | b;` positioned right before `d = x & c;`). Synthesizing the corrected configuration forces Yosys to link clean, optimized logic paths mapping to independent OR and AND standard gate cells.
