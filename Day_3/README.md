@@ -34,6 +34,7 @@ yosys> show -format png -prefix opt_check_mapped
 ```
 
 **Results & Technical Analysis:**
+
 ![Gate Level Schematic for opt_check](opt check schematic.png)
 * **Analysis:** Because one input of the internal expression is hardwired to a constant value, Yosys propagates this value through the expression. The logic simplifications drastically reduce the required gate count, resulting in an area-optimized layout mapped to the Sky130 library cells.
 
@@ -51,6 +52,7 @@ yosys> abc -liberty ../my_lib/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
 ```
 
 **Results & Technical Analysis:**
+
 ![Gate Level Schematic for opt_check2](opt_check2 schematic.png)
 * **Analysis:** Yosys looks across all distinct output branches. When multiple outputs share an identical boolean sub-expression or depend on common constant inputs, the synthesis tool shares physical standard cell gates to drive both pins, preserving area.
 
