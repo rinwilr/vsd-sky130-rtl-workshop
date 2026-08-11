@@ -239,8 +239,8 @@ end
 endmodule
 ```
 **Results & Technical Analysis:**
-![Complete Case Graph](compcase.png)
-![Complete Case Synthesis Output](compcase_synth.png)
+![Complete Case Graph](comp_case_waveform.png)
+![Complete Case Synthesis Output](comp_case_schematic.png)
 * **Analysis:** This design represents a clean, fully specified multiplexer. By mapping distinct select options (`2'b00`, `2'b01`) and blanketing the remaining space (`2'b10`, `2'b11`) with a explicit `default` path, latch inference is completely avoided. The output maps directly to standard combinational multiplexer cells.
 
 ---
@@ -264,8 +264,9 @@ end
 endmodule
 ```
 **Results & Technical Analysis:**
-![Bad Case Graph](badcase.png)
-![Bad Case Synthesis Output](incomp_case_synth.png)
+![Bad Case Graph](bad_case_waveform.png)
+![Bad Case Synthesis Output](bad_case_schematic.png)
+![Bad Case Synthesis Output](bad_case_gls_waveform.png)
 * **Analysis:** Using wildcard or unmapped combinations without a primary `default` path creates holes in the combinational truth table. If `sel` switches to an unhandled matching space during execution, the network latches, producing a synthesis-simulation mismatch.
 
 ---
@@ -295,7 +296,7 @@ endmodule
 ```
 **Results & Technical Analysis:**
 ![Partial Case Graph](Screenshot_2025-05-28_12-39-30)
-![Partial Case Area Report](partial_co.png)
+![Partial Case Area Report](partial_case_assign_schematic.png)
 * **Analysis:** This lab illustrates partial variable tracking bugs. Although the case statement handles all `sel` states using a `default` arm, the `2'b01` execution path updates `y` but fails to provide a value for `x`. Consequently, `y` synthesizes to clean combinational gates, while `x` forces the inference of a latch.
 
 ---
