@@ -295,7 +295,6 @@ end
 endmodule
 ```
 **Results & Technical Analysis:**
-![Partial Case Graph](Screenshot_2025-05-28_12-39-30)
 ![Partial Case Area Report](partial_case_assign_schematic.png)
 * **Analysis:** This lab illustrates partial variable tracking bugs. Although the case statement handles all `sel` states using a `default` arm, the `2'b01` execution path updates `y` but fails to provide a value for `x`. Consequently, `y` synthesizes to clean combinational gates, while `x` forces the inference of a latch.
 
